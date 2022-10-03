@@ -19,7 +19,7 @@ def test_gym(environment):
         state, info = environment.reset()
         done = False
         score = 0
-        print(info)
+       # print(info)
         while not done:
             action = environment.action_space.sample()
             n_state, reward, done, info = environment.step(action)
