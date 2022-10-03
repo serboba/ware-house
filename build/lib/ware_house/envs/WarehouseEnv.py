@@ -1,4 +1,3 @@
-from os import curdir
 import random
 import numpy as np
 import gym
@@ -25,9 +24,8 @@ class WarehouseEnv(gym.Env):
         self.n_agents = n_agents
         self.n_shelves = n_shelves
         self.warehouse = Warehouse(height, width)
-        #self.n_shelves = len(self.warehouse.shelf_dict)
         self.make_spaces()
-        self.reward = 0
+        self.reward = 0;
 
     def make_spaces(self):
         location_space = spaces.MultiDiscrete([self.height, self.width])
@@ -49,55 +47,15 @@ class WarehouseEnv(gym.Env):
             i: location_space
             for i in range(N_GOALS)
         })
-        l1 = []
-
-        for i in range(self.n_agents):
-            l1.append(np.array([location_space,direction_space]))
-        
-        l2= []
-        for j in range(self.n_shelves):
-            l2.append(location_space)
-        l3 = []
-        for i in range(N_GOALS):
-            l3.append(location_space)
-
-
-        test1 = np.array([[0,0,0],[10,10,4]])
-        test1 = np.tile(test1,len(l1))
-
-        test2 = np.array([[0,0],[10,10]])
-        shelftest = np.tile(test2,len(l2))
-
-        goaltest = np.tile(test2,len(l3))
-#        test = self._get_obs()
         self.observation_space = spaces.Dict({
-            "agent": gym.spaces.Box(low=self.height,high=self.width,shape=(test1[0].shape[0],)),
-            "shelf": gym.spaces.Box(low=self.height,high=self.width,shape=(shelftest[0].shape[0],)),
-            "goal": gym.spaces.Box(low=self.height,high=self.width,shape=(goaltest[0].shape[0],))
+            "agent": agent_list_space,
+            "shelf": shelf_list_space,
+            "goal": goal_list_space
         })
 
         self.action_space = spaces.MultiDiscrete([len(Action) for i in range(self.n_agents)])
 
     def _get_obs(self):
-        t1 = []
-        t2 = []
-        t3 = []
-        for agent in self.warehouse.agent_dict.values():
-            t1.append(agent.y)
-            t1.append(agent.x)
-            t1.append(agent.cur_dir.value)
-        for shelf in self.warehouse.shelf_dict.values():
-            t2.append(shelf.y)
-            t2.append(shelf.x)
-            dif = self.n_shelves - len(self.warehouse.shelf_dict)
-            if dif != 0:
-                t2.append(self.warehouse.goal_dict[0].y)
-                t2.append(self.warehouse.goal_dict[0].x)
-
-        for goal in self.warehouse.goal_dict.values():
-            t3.append (goal.y)
-            t3.append (goal.x)
-        '''
         obs = spaces.Dict({
             "agent":
                 spaces.Dict({
@@ -116,19 +74,8 @@ class WarehouseEnv(gym.Env):
                     for i, goal in enumerate(self.warehouse.goal_dict.values())
                 })
         })
-        '''
-        t1 = np.array(t1)
-        t2 = np.array(t2)
-        t3 = np.array(t3)
-       
-
-        mydict = {
-            "agent": t1,
-            "shelf" : t2,
-            "goal" : t3
-        }
-
-        return mydict
+        print(type(obs))
+        return obs
 
     def _get_info(self):
         return {
@@ -159,15 +106,12 @@ class WarehouseEnv(gym.Env):
             self.warehouse.debug_agents_actions(f'{i + 1}_{agent_action}')
             self.reward += self.warehouse.agent_dict[i + 1].score
         if len(self.warehouse.shelf_dict.keys()) == 0:
-            print("------DONE YESSSSSSSSS!!!!!!!!!")
             done = True
-        else:
-            self.n_shelves = len(self.warehouse.shelf_dict.keys())
         observation = self._get_obs()
-        #info = self._get_info()
+        info = self._get_info()
         if self.render_mode == "human":
             self._render_frame()
-        return observation, self.reward, done, {}
+        return observation, self.reward, done, info
 
     def render(self, **kwargs):
         if self.render_mode == "rgb_array":
@@ -294,7 +238,6 @@ class WarehouseEnv(gym.Env):
                 pos_y = random.randint(0, self.height - 1)
                 pos_x = random.randint(0, self.width - 1)
             counter -= 1
-
         observation = self._get_obs()
-        #info = self._get_info()
-        return observation, {}
+        info = self._get_info()
+        return observation, info

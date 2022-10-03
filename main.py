@@ -9,6 +9,7 @@ from stable_baselines3 import PPO, A2C
 from stable_baselines3.common.vec_env import DummyVecEnv
 from stable_baselines3.common.evaluation import evaluate_policy
 
+
 import ware_house.envs
 
 
@@ -38,8 +39,8 @@ def train(environment):
 
 # Press the green button in the gutter to run the script.
 if __name__ == '__main__':
-    env = gym.make("rware-v4")
-    # test_gym(env)
+    env = gym.make("rware-v1")
+    #test_gym(env)
     train(env)
 
 # See PyCharm help at https://www.jetbrains.com/help/pycharm/
