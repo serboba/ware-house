@@ -264,6 +264,7 @@ class Warehouse:
                 new_goal = Goal(int(goal_attr[0]), int(goal_attr[1]))
                 self.goal_dict[new_goal.id] = new_goal
         return success
+
     def debug_spawn_agents(self, agents: string):
         agents = agents.split(',')
         success = True
@@ -278,6 +279,7 @@ class Warehouse:
                 new_agent = Agent(int(agent_attr[0]), int(agent_attr[1]), Direction(int(agent_attr[2])))
                 self.agent_dict[new_agent.id] = new_agent
         return success
+
     def debug_spawn_shelves(self, shelves: string):
         shelves = shelves.split(',')
         for shelf in shelves:
@@ -286,6 +288,7 @@ class Warehouse:
             self.shelf_dict[new_shelf.id] = new_shelf
             self.free_shelves[new_shelf.id] = new_shelf
         return True
+
     def debug_agents_actions(self, actions: string):
         actions = actions.split(',')
         for agent_actions in actions:
@@ -302,13 +305,14 @@ class Warehouse:
                     # print('Invalid action ',des_action, 'for agent ', agent.id)
                     pass
                 else:
-                    if agent.carrying_shelf == None:
-                        min = self.calc_min_dis(agent)
-                        if min < agent.min_dis:
-                            agent.min_dis = min
-                            agent.score += 0.5
+                    min_temp = self.calc_min_dis(agent)
+                    if min_temp < agent.min_dis:
+                        agent.score += 0.5
+                    else:
+                        agent.score -= 0.5
+                    agent.min_dis = min_temp
                     self.agent_dict[agent.id].step(des_action)
-            ##no neeed to check collision when turning
+            ##no need to check collision when turning
             elif des_action == Action.NONE or des_action == Action.RIGHT or des_action == Action.LEFT:
                 self.agent_dict[agent.id].step(des_action)
 
@@ -319,8 +323,8 @@ class Warehouse:
                     self.free_shelves.pop(shelf.id)
                     agent.load(shelf)
                     agent.score += 2
-                    agent.min_dis = 0
-                    #print('Agent ', agent.id, 'picked up the shelf ', shelf.id)
+                    agent.min_dis = self.calc_min_dis(agent)
+                    # print('Agent ', agent.id, 'picked up the shelf ', shelf.id)
                 else:
                     # print('Invalid action ', des_action, 'for agent ', agent.id)
                     pass
@@ -331,8 +335,8 @@ class Warehouse:
                     agent.unload()
                     agent.score += 1
                     self.shelf_dict.pop(shelf.id)
-                    agent.min_dis = 999
-                    #print('Agent ', agent.id, 'left the shelf ', shelf.id)
+                    agent.min_dis = self.calc_min_dis()
+                    # print('Agent ', agent.id, 'left the shelf ', shelf.id)
                 else:
                     # print('Invalid action ', des_action, 'for agent ', agent.id)
                     pass
@@ -405,10 +409,16 @@ class Warehouse:
 
     def calc_min_dis(self, agent: Agent):
         min = 999
-        for shelf in self.free_shelves.values():
-            dis = abs(agent.x - shelf.x) + abs(agent.y - shelf.y)
-            if dis < min:
-                min = dis
+        if agent.carrying_shelf:
+            for shelf in self.free_shelves.values():
+                dis = abs(agent.x - shelf.x) + abs(agent.y - shelf.y)
+                if dis < min:
+                    min = dis
+        else:
+            for goal in self.goal_dict.values():
+                dis = abs(agent.x - goal.x) + abs(agent.y - goal.y)
+                if dis < min:
+                    min = dis
         return min
 
     def step(self):

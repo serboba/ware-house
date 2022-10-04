@@ -189,7 +189,7 @@ class WarehouseEnv(gym.Env):
 
         # First we draw the goals
         for goal in self.warehouse.goal_dict.values():
-            location = np.array([goal.y, goal.x])
+            location = np.array([goal.x, goal.y])
             pygame.draw.rect(
                 canvas,
                 (255, 0, 0),
@@ -198,9 +198,18 @@ class WarehouseEnv(gym.Env):
                     (pix_square_size, pix_square_size),
                 ),
             )
+        # draw shelves
+        for shelf in self.warehouse.free_shelves.values():
+            location = np.array([shelf.x, shelf.y])
+            pygame.draw.circle(
+                canvas,
+                (0, 255, 0),
+                (location + 0.5) * pix_square_size,
+                pix_square_size / 4,
+            )
         # Now we draw the agents
         for agent in self.warehouse.agent_dict.values():
-            location = np.array([agent.y, agent.x])
+            location = np.array([agent.x, agent.y])
             pygame.draw.circle(
                 canvas,
                 (0, 0, 255),
@@ -209,22 +218,55 @@ class WarehouseEnv(gym.Env):
             )
             if agent.carrying_shelf:
                 shelf = self.warehouse.shelf_dict[agent.carrying_shelf_id]
-                location = np.array([shelf.y, shelf.x])
+                location = np.array([shelf.x, shelf.y])
                 pygame.draw.circle(
                     canvas,
                     (255, 97, 3),
                     (location + 0.5) * pix_square_size,
                     pix_square_size / 4,
                 )
-        # draw shelves
-        for shelf in self.warehouse.free_shelves.values():
-            location = np.array([shelf.y, shelf.x])
-            pygame.draw.circle(
-                canvas,
-                (0, 255, 0),
-                (location + 0.5) * pix_square_size,
-                pix_square_size / 4,
-            )
+
+            if agent.cur_dir == Direction.UP:
+                agent_dir_start = np.array([agent.x + 0.5, agent.y + 0.25]) * pix_square_size
+                agent_dir_end = np.array([agent.x + 0.5, agent.y + 0.50]) * pix_square_size
+                pygame.draw.line(
+                    canvas,
+                    (0, 255, 255),
+                    (agent_dir_start[0], agent_dir_start[1]),
+                    (agent_dir_end[0], agent_dir_end[1]),
+                    width=10,
+                )
+            elif agent.cur_dir == Direction.RIGHT:
+                agent_dir_start = np.array([agent.x + 0.50, agent.y + 0.5]) * pix_square_size
+                agent_dir_end = np.array([agent.x + 0.75, agent.y + 0.5]) * pix_square_size
+                pygame.draw.line(
+                    canvas,
+                    (0, 255, 255),
+                    (agent_dir_start[0], agent_dir_start[1]),
+                    (agent_dir_end[0], agent_dir_end[1]),
+                    width=10,
+                )
+            elif agent.cur_dir == Direction.DOWN:
+                agent_dir_start = np.array([agent.x + 0.5, agent.y + 0.5]) * pix_square_size
+                agent_dir_end = np.array([agent.x + 0.5, agent.y + 0.75]) * pix_square_size
+
+                pygame.draw.line(
+                    canvas,
+                    (0, 255, 255),
+                    (agent_dir_start[0], agent_dir_start[1]),
+                    (agent_dir_end[0], agent_dir_end[1]),
+                    width=10,
+                )
+            else:
+                agent_dir_start = np.array([agent.x + 0.25, agent.y + 0.5]) * pix_square_size
+                agent_dir_end = np.array([agent.x + 0.5, agent.y + 0.5]) * pix_square_size
+                pygame.draw.line(
+                    canvas,
+                    (0, 255, 255),
+                    (agent_dir_start[0], agent_dir_start[1]),
+                    (agent_dir_end[0], agent_dir_end[1]),
+                    width=10,
+                )
 
         # Finally, add some gridlines
         for x in range(self.size + 1):
