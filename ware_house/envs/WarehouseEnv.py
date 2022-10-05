@@ -23,7 +23,8 @@ class WarehouseEnv(gym.Env):
         self.width = width
         self.height = height
         self.n_agents = n_agents
-        self.n_shelves = n_shelves
+        self.cur_shelves_n = n_shelves
+        self.N_SHELVES  = n_shelves
         self.warehouse = Warehouse(height, width)
         #self.n_shelves = len(self.warehouse.shelf_dict)
         self.make_spaces()
@@ -43,7 +44,7 @@ class WarehouseEnv(gym.Env):
         })
         shelf_list_space = spaces.Dict({
             i: location_space
-            for i in range(self.n_shelves)
+            for i in range(self.N_SHELVES)
         })
         goal_list_space = spaces.Dict({
             i: location_space
@@ -55,7 +56,7 @@ class WarehouseEnv(gym.Env):
             l1.append(np.array([location_space,direction_space]))
         
         l2= []
-        for j in range(self.n_shelves):
+        for j in range(self.cur_shelves_n):
             l2.append(location_space)
         l3 = []
         for i in range(N_GOALS):
@@ -89,7 +90,7 @@ class WarehouseEnv(gym.Env):
         for shelf in self.warehouse.shelf_dict.values():
             t2.append(shelf.y)
             t2.append(shelf.x)
-            dif = self.n_shelves - len(self.warehouse.shelf_dict)
+            dif = self.cur_shelves_n - len(self.warehouse.shelf_dict)
             if dif != 0:
                 t2.append(self.warehouse.goal_dict[0].y)
                 t2.append(self.warehouse.goal_dict[0].x)
@@ -162,7 +163,7 @@ class WarehouseEnv(gym.Env):
             print("------DONE YESSSSSSSSS!!!!!!!!!")
             done = True
         else:
-            self.n_shelves = len(self.warehouse.shelf_dict.keys())
+            self.cur_shelves_n = len(self.warehouse.shelf_dict.values())
         observation = self._get_obs()
         #info = self._get_info()
         if self.render_mode == "human":
@@ -302,6 +303,17 @@ class WarehouseEnv(gym.Env):
     def reset(self):
         self.warehouse.reset()
 
+        # spawn goals
+        counter = N_GOALS
+        while counter > 0:
+            pos_y = random.randint(0, self.height - 1)
+            pos_x = random.randint(0, self.width - 1)
+            # goal spawn format "{pos_y}_{pos_x}"
+            while not self.warehouse.debug_spawn_goals(f'{pos_y}_{pos_x}'):
+                pos_y = random.randint(0, self.height - 1)
+                pos_x = random.randint(0, self.width - 1)
+            counter -= 1
+
         # spawn random agents
         counter = self.n_agents
         while counter > 0:
@@ -315,19 +327,10 @@ class WarehouseEnv(gym.Env):
                 dir = random.randint(0, len(Direction) - 1)
             counter -= 1
 
-        # spawn goals
-        counter = N_GOALS
-        while counter > 0:
-            pos_y = random.randint(0, self.height - 1)
-            pos_x = random.randint(0, self.width - 1)
-            # goal spawn format "{pos_y}_{pos_x}"
-            while not self.warehouse.debug_spawn_goals(f'{pos_y}_{pos_x}'):
-                pos_y = random.randint(0, self.height - 1)
-                pos_x = random.randint(0, self.width - 1)
-            counter -= 1
 
         # spawn shelves
-        counter = self.n_shelves
+        counter = self.N_SHELVES
+        self.cur_shelves_n = self.N_SHELVES
         while counter > 0:
             pos_y = random.randint(0, self.height - 1)
             pos_x = random.randint(0, self.width - 1)
