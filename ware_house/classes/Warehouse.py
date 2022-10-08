@@ -450,10 +450,10 @@ class Warehouse:
         elif agent.cur_dir == Direction.RIGHT:
             if agent.x <= closest_pos[1]:
                 turn_cost -= 1
-                if agent.x == closest_pos[1]:
+                if agent.y == closest_pos[0]:
                     turn_cost -= 1
         else:
-            if agent.y < closest_pos[0]:
+            if agent.y <= closest_pos[0]:
                 turn_cost -= 1
                 if agent.x == closest_pos[1]:
                     turn_cost -= 1
