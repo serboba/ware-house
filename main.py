@@ -33,7 +33,7 @@ def train(environment):
     log_path = os.path.join('Training', 'Logs')
     model = A2C("MultiInputPolicy", environment, verbose=1)
     model.learn(total_timesteps=400000)
-    model.save('a2c-rware')
+    model.save('a2c-rware-2')
     evaluate_policy(model, environment, n_eval_episodes=10, render=True)
 
 

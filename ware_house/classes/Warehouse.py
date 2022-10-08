@@ -17,6 +17,12 @@ FEATURE_DIR_IND = 1
 
 N_GOALS = 2
 
+class Reward(Enum):
+    LOAD_REWARD = 2,
+    UNLOAD_REWARD = 2,
+    DISTANCE_PENALTY = -1,
+    DISTANCE_REWARD = 1,
+    INVALID_MOVE_PENALTY = -2
 
 class Action(Enum):
     NONE = 0
@@ -302,15 +308,15 @@ class Warehouse:
                 new_pos = self.simulate_move((agent.y, agent.x), agent.cur_dir, des_action)
                 does_collide = self._does_collide(new_pos)
                 if does_collide:
-                    agent.score -= 0.5
+                    agent.score += Reward.INVALID_MOVE_PENALTY
                     # print('Invalid action ',des_action, 'for agent ', agent.id)
                     pass
                 else:
                     min_temp = self.calc_min_dis(agent, new_pos)
                     if min_temp < agent.min_dis:
-                        agent.score += 1.5
+                        agent.score += Reward.DISTANCE_REWARD
                     else:
-                        agent.score -= 1.5
+                        agent.score += Reward.DISTANCE_PENALTY
                     agent.min_dis = min_temp
                     self.agent_dict[agent.id].step(des_action)
             ##no need to check collision when turning
@@ -323,11 +329,11 @@ class Warehouse:
                     shelf = self.shelf_dict[shelf_id]
                     self.free_shelves.pop(shelf.id)
                     agent.load(shelf)
-                    agent.score += 2
+                    agent.score += Reward.LOAD_REWARD
                     agent.min_dis = self.calc_min_dis(agent, (agent.y,agent.x))
                     # print('Agent ', agent.id, 'picked up the shelf ', shelf.id)
                 else:
-                    agent.score -= 0.5
+                    agent.score += Reward.INVALID_MOVE_PENALTY
                     # print('Invalid action ', des_action, 'for agent ', agent.id)
                     pass
             elif des_action == Action.UNLOAD:
@@ -335,12 +341,12 @@ class Warehouse:
                 if is_on_goal and agent.carrying_shelf != None:
                     shelf = agent.carrying_shelf
                     agent.unload()
-                    agent.score += 2
+                    agent.score += Reward.UNLOAD_REWARD
                     self.shelf_dict.pop(shelf.id)
                     agent.min_dis = self.calc_min_dis(agent, (agent.y,agent.x))
                     # print('Agent ', agent.id, 'left the shelf ', shelf.id)
                 else:
-                    agent.score -= 0.5
+                    agent.score +=  Reward.INVALID_MOVE_PENALTY
                     # print('Invalid action ', des_action, 'for agent ', agent.id)
                     pass
         new_line = '\n'
@@ -413,17 +419,45 @@ class Warehouse:
 
     def calc_min_dis(self, agent: Agent , new_pos:tuple):
         min = 999
+        # (y,x)
+        closest_pos = (0,0)
+        # calculate manhattan distance
         if not agent.carrying_shelf:
             for shelf in self.free_shelves.values():
                 dis = abs(new_pos[1] - shelf.x) + abs(new_pos[0] - shelf.y)
                 if dis < min:
                     min = dis
+                    closest_pos = (shelf.y, shelf.x)
         else:
             for goal in self.goal_dict.values():
                 dis = abs(new_pos[1] - goal.x) + abs(new_pos[0] - goal.y)
                 if dis < min:
                     min = dis
-        return min
+                    closest_pos = (goal.y, goal.x)
+        # calculate turn costs
+        turn_cost = 2
+        if agent.cur_dir == Direction.LEFT:
+            # left
+            if agent.x >= closest_pos[1]:
+                turn_cost -= 1
+                if agent.y == closest_pos[0]:
+                    turn_cost -= 1
+        elif agent.cur_dir == Direction.UP:
+            if agent.y >= closest_pos[0]:
+                turn_cost -= 1
+                if agent.x == closest_pos[1]:
+                    turn_cost -= 1
+        elif agent.cur_dir == Direction.RIGHT:
+            if agent.x <= closest_pos[1]:
+                turn_cost -= 1
+                if agent.x == closest_pos[1]:
+                    turn_cost -= 1
+        else:
+            if agent.y < closest_pos[0]:
+                turn_cost -= 1
+                if agent.x == closest_pos[1]:
+                    turn_cost -= 1
+        return min + turn_cost
 
     def step(self):
         pass
