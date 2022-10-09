@@ -160,7 +160,6 @@ class WarehouseEnv(gym.Env):
             self.warehouse.debug_agents_actions(f'{i + 1}_{agent_action}')
             self.reward += self.warehouse.agent_dict[i + 1].score
         if len(self.warehouse.shelf_dict.keys()) == 0:
-            print("------DONE YESSSSSSSSS!!!!!!!!!")
             done = True
         else:
             self.cur_shelves_n = len(self.warehouse.shelf_dict.values())

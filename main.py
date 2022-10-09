@@ -31,6 +31,7 @@ def test_gym(environment):
 
 def train(environment):
     log_path = os.path.join('Training', 'Logs')
+
     model = A2C("MultiInputPolicy", environment, verbose=1)
     model.learn(total_timesteps=400000)
     model.save('a2c-rware-2')

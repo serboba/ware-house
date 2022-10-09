@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 import string
 import random
-from enum import Enum
+from enum import Enum, IntEnum
 from typing import Tuple, Optional
 
 import numpy as np
@@ -17,12 +17,14 @@ FEATURE_DIR_IND = 1
 
 N_GOALS = 2
 
-class Reward(Enum):
+
+class Reward(IntEnum):
     LOAD_REWARD = 2,
     UNLOAD_REWARD = 2,
     DISTANCE_PENALTY = -1,
     DISTANCE_REWARD = 1,
     INVALID_MOVE_PENALTY = -2
+
 
 class Action(Enum):
     NONE = 0
@@ -273,7 +275,7 @@ class Warehouse:
         is_succes = True
         for agent in agents:
             agent_attr = agent.split('_')
-            #check if there is a collision on target pos
+            # check if there is a collision on target pos
             if not self._does_collide((int(agent_attr[0]), int(agent_attr[1]))):
                 new_agent = Agent(int(agent_attr[0]), int(agent_attr[1]), Direction(int(agent_attr[2])))
                 self.agent_dict[new_agent.id] = new_agent
@@ -308,15 +310,16 @@ class Warehouse:
                 new_pos = self.simulate_move((agent.y, agent.x), agent.cur_dir, des_action)
                 does_collide = self._does_collide(new_pos)
                 if does_collide:
-                    agent.score += Reward.INVALID_MOVE_PENALTY
+                    agent.score += Reward.INVALID_MOVE_PENALTY.value
                     # print('Invalid action ',des_action, 'for agent ', agent.id)
                     pass
                 else:
                     min_temp = self.calc_min_dis(agent, new_pos)
                     if min_temp < agent.min_dis:
-                        agent.score += Reward.DISTANCE_REWARD
+                        reward = Reward.DISTANCE_REWARD.value
+                        agent.score += Reward.DISTANCE_REWARD.value
                     else:
-                        agent.score += Reward.DISTANCE_PENALTY
+                        agent.score += Reward.DISTANCE_PENALTY.value
                     agent.min_dis = min_temp
                     self.agent_dict[agent.id].step(des_action)
             ##no need to check collision when turning
@@ -329,11 +332,11 @@ class Warehouse:
                     shelf = self.shelf_dict[shelf_id]
                     self.free_shelves.pop(shelf.id)
                     agent.load(shelf)
-                    agent.score += Reward.LOAD_REWARD
-                    agent.min_dis = self.calc_min_dis(agent, (agent.y,agent.x))
+                    agent.score += Reward.LOAD_REWARD.value
+                    agent.min_dis = self.calc_min_dis(agent, (agent.y, agent.x))
                     # print('Agent ', agent.id, 'picked up the shelf ', shelf.id)
                 else:
-                    agent.score += Reward.INVALID_MOVE_PENALTY
+                    agent.score += Reward.INVALID_MOVE_PENALTY.value
                     # print('Invalid action ', des_action, 'for agent ', agent.id)
                     pass
             elif des_action == Action.UNLOAD:
@@ -341,16 +344,17 @@ class Warehouse:
                 if is_on_goal and agent.carrying_shelf != None:
                     shelf = agent.carrying_shelf
                     agent.unload()
-                    agent.score += Reward.UNLOAD_REWARD
+                    agent.score += Reward.UNLOAD_REWARD.value
                     self.shelf_dict.pop(shelf.id)
-                    agent.min_dis = self.calc_min_dis(agent, (agent.y,agent.x))
+                    agent.min_dis = self.calc_min_dis(agent, (agent.y, agent.x))
                     # print('Agent ', agent.id, 'left the shelf ', shelf.id)
                 else:
-                    agent.score +=  Reward.INVALID_MOVE_PENALTY
+                    agent.score += Reward.INVALID_MOVE_PENALTY.value
                     # print('Invalid action ', des_action, 'for agent ', agent.id)
                     pass
         new_line = '\n'
-        print(f"Agent id {agent.id} {new_line }on ({agent.y},{agent.x}) {new_line }with action {des_action} {new_line}min_dist {agent.min_dis}{new_line }reward {agent.score}")
+        #print(
+           # f"Agent id {agent.id} {new_line}on ({agent.y},{agent.x}) {new_line}with action {des_action} {new_line}min_dist {agent.min_dis}{new_line}reward {agent.score}")
 
     def _init_agents_callback(self, msg):
         for i, (a, (x, y)) in enumerate(msg.data):
@@ -417,10 +421,10 @@ class Warehouse:
         if ind not in self.shelf_dic:
             self.shelf_dic[ind] = Shelf(y, x)
 
-    def calc_min_dis(self, agent: Agent , new_pos:tuple):
+    def calc_min_dis(self, agent: Agent, new_pos: tuple):
         min = 999
         # (y,x)
-        closest_pos = (0,0)
+        closest_pos = (0, 0)
         # calculate manhattan distance
         if not agent.carrying_shelf:
             for shelf in self.free_shelves.values():
@@ -496,7 +500,8 @@ class Warehouse:
             if target_pos[0] == shelf.y and target_pos[1] == shelf.x:
                 return True
         ## check boundaries
-        if target_pos[0] < 0 or target_pos[1] < 0 or target_pos[0] >= self.map_height or target_pos[1] >= self.map_width:
+        if target_pos[0] < 0 or target_pos[1] < 0 or target_pos[0] >= self.map_height or target_pos[
+            1] >= self.map_width:
             return True
         return False
 
