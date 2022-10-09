@@ -19,7 +19,7 @@ class WarehouseEnv(gym.Env):
         self.render_mode = "human"
         self.window = None
         self.clock = None
-
+        self.step_counter = 0
         self.width = width
         self.height = height
         self.n_agents = n_agents
@@ -155,12 +155,14 @@ class WarehouseEnv(gym.Env):
 
     def step(self, action):
         done = False
+        self.step_counter += 1
         self.reward = 0
         for i, agent_action in enumerate(action):
             self.warehouse.debug_agents_actions(f'{i + 1}_{agent_action}')
             self.reward += self.warehouse.agent_dict[i + 1].score
         if len(self.warehouse.shelf_dict.keys()) == 0:
             done = True
+            print(f"Episode ends with {self.step_counter} steps and with reward {self.reward}")
         else:
             self.cur_shelves_n = len(self.warehouse.shelf_dict.values())
         observation = self._get_obs()
@@ -301,7 +303,7 @@ class WarehouseEnv(gym.Env):
 
     def reset(self):
         self.warehouse.reset()
-
+        self.step_counter = 0
         # spawn goals
         counter = N_GOALS
         while counter > 0:

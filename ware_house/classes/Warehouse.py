@@ -289,7 +289,7 @@ class Warehouse:
         for shelf in shelves:
             shelf_attr = shelf.split('_')
             is_slot_free = True
-            if not self._does_collide((int(shelf_attr[0]), int(shelf_attr[1]))):
+            if not self._does_collide((int(shelf_attr[0]), int(shelf_attr[1]))) and not self._is_on_goal((int(shelf_attr[0]), int(shelf_attr[1]))):
                 new_shelf = Shelf(int(shelf_attr[0]), int(shelf_attr[1]))
                 self.shelf_dict[new_shelf.id] = new_shelf
                 self.free_shelves[new_shelf.id] = new_shelf
@@ -504,7 +504,12 @@ class Warehouse:
             1] >= self.map_width:
             return True
         return False
+    def _is_on_goal(self, target_pos: Tuple):
+        for goal in self.goal_dict.values():
+            if target_pos[0] == goal.y and target_pos[1] == goal.x:
+                return True
 
+        return False
     # method to be used for converting self.map_image into array
     def _convert_image_into_array(self):
         pass
