@@ -19,11 +19,11 @@ N_GOALS = 2
 
 
 class Reward(IntEnum):
-    LOAD_REWARD = 2,
-    UNLOAD_REWARD = 2,
-    DISTANCE_PENALTY = -1,
-    DISTANCE_REWARD = 1,
-    INVALID_MOVE_PENALTY = -2
+    LOAD_REWARD = 10,
+    UNLOAD_REWARD = 10,
+    DISTANCE_PENALTY = -2,
+    DISTANCE_REWARD = 2,
+    INVALID_MOVE_PENALTY = -10
 
 
 class Action(Enum):
@@ -306,16 +306,17 @@ class Warehouse:
             des_action = Action(int(agent_attr[1]))
 
             ## if action is FORWARD then check collisions
+            new_pos = self.simulate_move((agent.y, agent.x), agent.cur_dir, des_action)
             if des_action == Action.FORWARD:
-                new_pos = self.simulate_move((agent.y, agent.x), agent.cur_dir, des_action)
                 does_collide = self._does_collide(new_pos)
                 if does_collide:
                     agent.score += Reward.INVALID_MOVE_PENALTY.value
                     # print('Invalid action ',des_action, 'for agent ', agent.id)
                     pass
                 else:
-                    min_temp = self.calc_min_dis(agent, new_pos)
-                    if min_temp < agent.min_dis:
+                    min_dis, turn_cost  = self.calc_costs(agent, new_pos)
+                    min_temp = min_dis + turn_cost
+                    if min_temp  < agent.min_dis:
                         reward = Reward.DISTANCE_REWARD.value
                         agent.score += Reward.DISTANCE_REWARD.value
                     else:
@@ -333,7 +334,9 @@ class Warehouse:
                     self.free_shelves.pop(shelf.id)
                     agent.load(shelf)
                     agent.score += Reward.LOAD_REWARD.value
-                    agent.min_dis = self.calc_min_dis(agent, (agent.y, agent.x))
+                    min_dis, turn_cost = self.calc_costs(agent, new_pos)
+                    min_temp = min_dis + turn_cost
+                    agent.min_dis = min_temp
                     # print('Agent ', agent.id, 'picked up the shelf ', shelf.id)
                 else:
                     agent.score += Reward.INVALID_MOVE_PENALTY.value
@@ -346,7 +349,9 @@ class Warehouse:
                     agent.unload()
                     agent.score += Reward.UNLOAD_REWARD.value
                     self.shelf_dict.pop(shelf.id)
-                    agent.min_dis = self.calc_min_dis(agent, (agent.y, agent.x))
+                    min_dis, turn_cost = self.calc_costs(agent, new_pos)
+                    min_temp = min_dis + turn_cost
+                    agent.min_dis = min_temp
                     # print('Agent ', agent.id, 'left the shelf ', shelf.id)
                 else:
                     agent.score += Reward.INVALID_MOVE_PENALTY.value
@@ -421,22 +426,22 @@ class Warehouse:
         if ind not in self.shelf_dic:
             self.shelf_dic[ind] = Shelf(y, x)
 
-    def calc_min_dis(self, agent: Agent, new_pos: tuple):
-        min = 999
+    def calc_costs(self, agent: Agent, new_pos: tuple):
+        dist_cost = 999
         # (y,x)
         closest_pos = (0, 0)
         # calculate manhattan distance
         if not agent.carrying_shelf:
             for shelf in self.free_shelves.values():
                 dis = abs(new_pos[1] - shelf.x) + abs(new_pos[0] - shelf.y)
-                if dis < min:
-                    min = dis
+                if dis < dist_cost:
+                    dist_cost = dis
                     closest_pos = (shelf.y, shelf.x)
         else:
             for goal in self.goal_dict.values():
                 dis = abs(new_pos[1] - goal.x) + abs(new_pos[0] - goal.y)
-                if dis < min:
-                    min = dis
+                if dis < dist_cost:
+                    dist_cost = dis
                     closest_pos = (goal.y, goal.x)
         # calculate turn costs
         turn_cost = 2
@@ -461,9 +466,9 @@ class Warehouse:
                 turn_cost -= 1
                 if agent.x == closest_pos[1]:
                     turn_cost -= 1
-        return min + turn_cost
-
-    def step(self):
+        return dist_cost, turn_cost
+    def calculate_strict_rules(self, agent : Agent, desired_act : Action):
+        # check
         pass
 
     # for each simulation step

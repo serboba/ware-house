@@ -167,8 +167,8 @@ class WarehouseEnv(gym.Env):
             self.cur_shelves_n = len(self.warehouse.shelf_dict.values())
         observation = self._get_obs()
         #info = self._get_info()
-        if self.render_mode == "human":
-            self._render_frame()
+        # if self.render_mode == "human":
+           #self._render_frame()
         return observation, self.reward, done, {}
 
     def render(self, **kwargs):
