@@ -12,9 +12,9 @@ from stable_baselines3.common.evaluation import evaluate_policy
 
 import ware_house.envs
 
-
+'''
 def test_gym(environment):
-    episodes = 1
+    episodes = 10
     for episode in range(1, episodes + 1):
         state, info = environment.reset()
         done = False
@@ -28,20 +28,24 @@ def test_gym(environment):
         print('Episode:{} Score:{}'.format(episode, score))
     environment.close()
 
-
+'''
 def train(environment):
     log_path = os.path.join('Training', 'Logs')
 
+    
+    rewards = []
     model = A2C("MultiInputPolicy", environment, verbose=1,tensorboard_log="./a2c_warehouse_agent2/")
-    model.learn(total_timesteps=1000)
+    model.learn(total_timesteps=1000000)
     model.save('a2c-rware-2')
+
+    print(rewards)
+
     #evaluate_policy(model, environment, n_eval_episodes=10, render=True)
 
 
 # Press the green button in the gutter to run the script.
 if __name__ == '__main__':
     env = gym.make("rware-v1")
-    env.spec.max_episode_steps = 10
     #test_gym(env)
     train(env)
 

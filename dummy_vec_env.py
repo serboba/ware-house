@@ -93,27 +93,112 @@ class DummyVecEnv(VecEnv):
             if key is None:
                 self.buf_obs[key][env_idx] = obs
             else:
-                if(type(obs) is tuple):
-                    
+                if(type(obs) is tuple):   
+                    '''
                     if len(self.buf_obs[key][env_idx]) != len(obs[0][key]):
                         dif = int((self.buf_obs[key][env_idx].shape[0] - obs[0][key].shape[0])/2)    
                         for i in range(dif):
                             obs[0][key] = np.append(obs[0][key],[obs[0]["goal"][0],obs[0]["goal"][1]])
                         
+                        print("1 ",self.buf_obs)
+                        print("2 ",self.buf_obs[key][env_idx])
+                        print("3 ",obs[0][key])
+                        print("4 ",obs)
+                        
                         self.buf_obs[key][env_idx] = obs[0][key]
+                        print("4 after : ", self.buf_obs)
                     else:
+                        
+                        print(self.buf_obs)
+                        print(obs)
+                        
+                        print("1 ",self.buf_obs)
+                        print("2 ",self.buf_obs[key][env_idx])
+                        print("3 ",obs[0][key])
+                        print("4 ",obs)
+                        
                         self.buf_obs[key][env_idx] = obs[0][key]
+                        #print("2 after ",self.buf_obs[key][env_idx])
+                    '''
+                    print("1A ",self.buf_obs)
+                    print("2A ",self.buf_obs[key][env_idx])
+                    print("4A ",obs)
+                    print("keyA ", key)
+                    print("3A ",obs[0][key])
+
                     
+                    if len(self.buf_obs[key][env_idx]) != len(obs[0][key]):
+                        print("HHHHHHHHHHHHHHHHHHHHHHHHH")
+
+                        
+                    self.buf_obs[key][env_idx] = obs[0][key]
+                    print("1 after 2",self.buf_obs)
+                    
+                    print('envidx = ',env_idx)
+                       
                 else:
+                    '''
+                    print("buf obs : ", self.buf_obs)
+                    print("obs : ", obs)
+                    print('bufobs key : ',self.buf_obs[key][env_idx] )
+                    print("obs key : ", obs[key])
+                    '''
+                    '''
                     if len(self.buf_obs[key][env_idx]) != len(obs[key]):
                         dif = int((self.buf_obs[key][env_idx].shape[0] - obs[key].shape[0])/2)
+                        #print('dif : ',dif)
+                        
                         for i in range(dif):
-                            obs[key] = np.append(obs[key],[obs["goal"][0],obs["goal"][1]])
-                        self.buf_obs[key][env_idx] = deepcopy(obs[key])
-                    else:
-                        self.buf_obs[key][env_idx] = deepcopy(obs[key])
+                            obs[key] = np.append(obs[key],[obs["shelf"][0],obs["goal"][1]])
+                        
+                            print("----------------------------")
+                            #obs[key] = np.append(obs[key],self.buf_obs[key][env_idx][-2:])
+                            print('obs key after : ', obs[key])
+                            print('ohne envidx : ', self.buf_obs[key])
+                            print('mit envidx : ', self.buf_obs[key][env_idx])
+                        
+                        print('bufobs  before : ', self.buf_obs[key][env_idx])
                     
+                        for k in range (len(obs[key])):
+                            self.buf_obs[key][env_idx][k] = deepcopy(obs[key][k])
+                        #print(k)
+                        #np.delete(self.buf_obs[key][env_idx],[k+1,k+2])
+                        print('bufobs  after : ', self.buf_obs[key][env_idx])
+                    else:
+                        print(self.buf_obs)
+                        print(obs)
+                        self.buf_obs[key][env_idx] = deepcopy(obs[key])
+                    '''
+                    print("1 ",self.buf_obs)
+                    print("2 ",self.buf_obs[key][env_idx])
+                    print("4 ",obs)
+                    print("3 ",obs[key])
+                    print("key : ", key)
+                    print('envidx = ',env_idx)
+                    
+                        
+                    #self.buf_obs[key][env_idx] = deepcopy(obs[key])
+                    
+                    if len(self.buf_obs[key][env_idx]) != len(obs[key]) and key == "shelf":
+                        #print(self.buf_obs[key][env_idx].type)
+                        a = np.delete(self.buf_obs[key][env_idx],[0,1])
+                        print(a)
+                        print("after del : ",self.buf_obs)
+                        print(list(self.buf_obs.keys()))
+                        del self.buf_obs[key]
+                        self.buf_obs.update({'shelf': a})
+                        print("after del : ",self.buf_obs)
+                        
+                        #self.buf_obs[key][env_idx] = a
+                        #self.buf_obs[key][env_idx] = obs[key]
+                    else:
+                        print("else case before: ", self.buf_obs)
+                        self.buf_obs[key][env_idx] = obs[key]
+                        print("else case after: ", self.buf_obs)
 
+
+                    print("1 after 1",self.buf_obs)
+                    
     def _obs_from_buf(self) -> VecEnvObs:
         return dict_to_obs(self.observation_space, copy_obs_dict(self.buf_obs))
 

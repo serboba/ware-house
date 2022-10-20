@@ -26,6 +26,7 @@ for _variation, _size, _agent_number, _shelf_number in _settings:
             "width": _sizes[_size][0],
             "height": _sizes[_size][1],
             "n_agents": _agents[_agent_number],
-            "n_shelves": _shelves[_shelf_number]
+            "n_shelves": _shelves[_shelf_number],
+        
         }
     )

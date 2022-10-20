@@ -71,12 +71,18 @@ class WarehouseEnv(gym.Env):
         test2 = np.array([[0,0],[10,10]])
         shelftest = np.tile(test2,len(l2))
 
+        print("shelftest : ", shelftest)
+        print("nshelfs : ", self.N_SHELVES)
+        print(shelftest.shape)
+        print(shelftest[0].shape)
         goaltest = np.tile(test2,len(l3))
-#        test = self._get_obs()
+
+#       test = self._get_obs()
         self.observation_space = spaces.Dict({
             "agent": gym.spaces.Box(low=self.height,high=self.width,shape=(test1[0].shape[0],)),
             "shelf": gym.spaces.Box(low=self.height,high=self.width,shape=(shelftest[0].shape[0],)),
             "goal": gym.spaces.Box(low=self.height,high=self.width,shape=(goaltest[0].shape[0],)),
+            "mindist" : gym.spaces.Box(low=0, high=999, shape=(self.n_agents,)),
         })
 
         '''
@@ -93,17 +99,21 @@ class WarehouseEnv(gym.Env):
         t1 = []
         t2 = []
         t3 = []
+        t4 = []
         for agent in self.warehouse.agent_dict.values():
             t1.append(agent.y)
             t1.append(agent.x)
             t1.append(agent.cur_dir.value)
+            t4.append(agent.min_dis)
         for shelf in self.warehouse.shelf_dict.values():
             t2.append(shelf.y)
             t2.append(shelf.x)
-            dif = self.cur_shelves_n - len(self.warehouse.shelf_dict)
-            if dif != 0:
-                t2.append(self.warehouse.goal_dict[0].y)
-                t2.append(self.warehouse.goal_dict[0].x)
+        dif = self.N_SHELVES - len(self.warehouse.shelf_dict)
+        if dif != 0:
+            print("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!", dif)
+            #print(self.warehouse.goal_dict[1])
+            #t2.append(self.warehouse.goal_dict[1].y)
+            #t2.append(self.warehouse.goal_dict[1].x)
 
         for goal in self.warehouse.goal_dict.values():
             t3.append (goal.y)
@@ -131,12 +141,14 @@ class WarehouseEnv(gym.Env):
         t1 = np.array(t1)
         t2 = np.array(t2)
         t3 = np.array(t3)
-       
+        t4 = np.array(t4)
 
+        #print("----t2: ", t2)
         mydict = {
             "agent": t1,
             "shelf" : t2,
-            "goal" : t3
+            "goal" : t3,
+            "mindist" : t4
         }
 
         return mydict
@@ -173,12 +185,14 @@ class WarehouseEnv(gym.Env):
         if len(self.warehouse.shelf_dict.keys()) == 0:
             done = True
             print(f"Episode ends with {self.step_counter} steps and with reward {self.reward}")
+            with open('reward_res.txt', 'a') as f:
+                f.write(f"{self.reward}\n")
         else:
             self.cur_shelves_n = len(self.warehouse.shelf_dict.values())
         observation = self._get_obs()
         #info = self._get_info()
-        # if self.render_mode == "human":
-           #self._render_frame()
+        #if self.render_mode == "human":
+        #    self._render_frame()
         return observation, self.reward, done, {}
 
     def render(self, **kwargs):
@@ -351,7 +365,9 @@ class WarehouseEnv(gym.Env):
                 pos_y = random.randint(0, self.height - 1)
                 pos_x = random.randint(0, self.width - 1)
             counter -= 1
-
+        #print("before!!!!!")
         observation = self._get_obs()
+        #print("after!!!!!")
         #info = self._get_info()
+
         return observation, {}

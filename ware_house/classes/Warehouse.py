@@ -15,7 +15,7 @@ FEATURE_ENTITY_IND = 0
 FEATURE_ID_IND = 2
 FEATURE_DIR_IND = 1
 
-N_GOALS = 2
+N_GOALS = 1
 
 
 class Reward(IntEnum):
@@ -358,6 +358,7 @@ class Warehouse:
                     agent.unload()
                     agent.score += Reward.UNLOAD_REWARD.value
                     self.shelf_dict.pop(shelf.id)
+                    print("popppppppp")
                     min_dis, turn_cost = self.calc_costs(agent, new_pos)
                     min_temp = min_dis + turn_cost
                     agent.min_dis = min_temp
