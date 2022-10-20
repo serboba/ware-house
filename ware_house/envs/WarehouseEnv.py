@@ -12,7 +12,7 @@ MAP_STRING = "0,A_2,0,0,0,0,0,0/0,A_3,0,0,0,A_2,0,0/0,0,S,0,0,0,0,0/0,0,0,0,0,0,
 
 class WarehouseEnv(gym.Env):
     metadata = {"render_modes": ["human", "rgb_array"], "render_fps": 4}
-
+    
     def __init__(self, width, height, n_agents, n_shelves):
         self.size = width  # The size of the square grid
         self.window_size = 512
@@ -29,6 +29,8 @@ class WarehouseEnv(gym.Env):
         #self.n_shelves = len(self.warehouse.shelf_dict)
         self.make_spaces()
         self.reward = 0
+
+
 
     def make_spaces(self):
         location_space = spaces.MultiDiscrete([self.height, self.width])
@@ -74,8 +76,16 @@ class WarehouseEnv(gym.Env):
         self.observation_space = spaces.Dict({
             "agent": gym.spaces.Box(low=self.height,high=self.width,shape=(test1[0].shape[0],)),
             "shelf": gym.spaces.Box(low=self.height,high=self.width,shape=(shelftest[0].shape[0],)),
-            "goal": gym.spaces.Box(low=self.height,high=self.width,shape=(goaltest[0].shape[0],))
+            "goal": gym.spaces.Box(low=self.height,high=self.width,shape=(goaltest[0].shape[0],)),
         })
+
+        '''
+        self.observation_space = spaces.Dict({
+            "agent": gym.spaces.Box(low=self.height,high=self.width,shape=(test1[0].shape[0],)),
+            "shelf": gym.spaces.Box(low=self.height,high=self.width,shape=(shelftest[0].shape[0],)),
+            "goal": gym.spaces.Box(low=self.height,high=self.width,shape=(goaltest[0].shape[0],)),
+        })
+        '''
 
         self.action_space = spaces.MultiDiscrete([len(Action) for i in range(self.n_agents)])
 
@@ -303,6 +313,7 @@ class WarehouseEnv(gym.Env):
 
     def reset(self):
         self.warehouse.reset()
+
         self.step_counter = 0
         # spawn goals
         counter = N_GOALS

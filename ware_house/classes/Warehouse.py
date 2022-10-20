@@ -312,7 +312,7 @@ class Warehouse:
                 if does_collide:
                     agent.score += Reward.INVALID_MOVE_PENALTY.value
                     # print('Invalid action ',des_action, 'for agent ', agent.id)
-                    pass
+                    #pass
                 else:
                     min_dis, turn_cost  = self.calc_costs(agent, new_pos)
                     min_temp = min_dis + turn_cost
@@ -325,7 +325,16 @@ class Warehouse:
                     self.agent_dict[agent.id].step(des_action)
             ##no need to check collision when turning
             elif des_action == Action.NONE or des_action == Action.RIGHT or des_action == Action.LEFT:
+                
+                min_dis, turn_cost  = self.calc_costs(agent, new_pos)
+                min_temp = min_dis + turn_cost
+                if min_temp  > agent.min_dis:
+                    agent.score += 2*Reward.DISTANCE_PENALTY.value
+                else:
+                    agent.score += Reward.DISTANCE_REWARD.value
+                agent.min_dis = min_temp
                 self.agent_dict[agent.id].step(des_action)
+
 
             elif des_action == Action.LOAD:
                 is_on_shelf, shelf_id = self._is_agent_on_shelf(agent)
@@ -341,7 +350,7 @@ class Warehouse:
                 else:
                     agent.score += Reward.INVALID_MOVE_PENALTY.value
                     # print('Invalid action ', des_action, 'for agent ', agent.id)
-                    pass
+                    #pass
             elif des_action == Action.UNLOAD:
                 is_on_goal = self._is_agent_on_goal(agent)
                 if is_on_goal and agent.carrying_shelf != None:
@@ -356,7 +365,7 @@ class Warehouse:
                 else:
                     agent.score += Reward.INVALID_MOVE_PENALTY.value
                     # print('Invalid action ', des_action, 'for agent ', agent.id)
-                    pass
+                    #pass
         new_line = '\n'
         #print(
            # f"Agent id {agent.id} {new_line}on ({agent.y},{agent.x}) {new_line}with action {des_action} {new_line}min_dist {agent.min_dis}{new_line}reward {agent.score}")
