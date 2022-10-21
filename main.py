@@ -11,18 +11,17 @@ from stable_baselines3 import PPO, A2C
 from stable_baselines3.common.vec_env import DummyVecEnv
 from stable_baselines3.common.evaluation import evaluate_policy
 
+
 import ware_house.envs
 
-LOG_PATH = ""
-
-
+'''
 def test_gym(environment):
-    episodes = 1
+    episodes = 10
     for episode in range(1, episodes + 1):
         state, info = environment.reset()
         done = False
         score = 0
-        # print(info)
+       # print(info)
         while not done:
             action = environment.action_space.sample()
             n_state, reward, done, info = environment.step(action)

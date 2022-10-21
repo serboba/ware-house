@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 import string
 import random
-from enum import Enum
+from enum import Enum, IntEnum
 from typing import Tuple, Optional
 
 import numpy as np
@@ -15,7 +15,15 @@ FEATURE_ENTITY_IND = 0
 FEATURE_ID_IND = 2
 FEATURE_DIR_IND = 1
 
-N_GOALS = 2
+N_GOALS = 1
+
+
+class Reward(IntEnum):
+    LOAD_REWARD = 10,
+    UNLOAD_REWARD = 10,
+    DISTANCE_PENALTY = -2,
+    DISTANCE_REWARD = 2,
+    INVALID_MOVE_PENALTY = -10
 
 
 class Action(Enum):
@@ -249,45 +257,46 @@ class Warehouse:
         self.map_str = new_map_str + "\n" + "----------------"
         return self.map_str
 
+    # a goal cannot be spawned on another goals but shelves and agents
     def debug_spawn_goals(self, goals: string):
         goals = goals.split(',')
-        success = True
+        is_success = True
         for goal in goals:
             goal_attr = goal.split('_')
-            is_slot_free = True
-            for goal_id in self.goal_dict.keys():
-                if self.goal_dict[goal_id].y == goal_attr[0] and self.goal_dict[goal_id].x == goal_attr[1]:
-                    is_slot_free = False
-                    success = False
-
-            if is_slot_free:
+            if not self._does_collide((int(goal_attr[0]), int(goal_attr[1]))):
                 new_goal = Goal(int(goal_attr[0]), int(goal_attr[1]))
                 self.goal_dict[new_goal.id] = new_goal
-        return success
+            else:
+                is_success = False
+        return is_success
 
     def debug_spawn_agents(self, agents: string):
         agents = agents.split(',')
-        success = True
+        is_succes = True
         for agent in agents:
             agent_attr = agent.split('_')
-            is_slot_free = True
-            for agent_id in self.agent_dict.keys():
-                if self.agent_dict[agent_id].y == agent_attr[0] and self.agent_dict[agent_id].x == agent_attr[1]:
-                    is_slot_free = False
-                    success = False
-            if is_slot_free:
+            # check if there is a collision on target pos
+            if not self._does_collide((int(agent_attr[0]), int(agent_attr[1]))):
                 new_agent = Agent(int(agent_attr[0]), int(agent_attr[1]), Direction(int(agent_attr[2])))
                 self.agent_dict[new_agent.id] = new_agent
-        return success
+            else:
+                is_succes = False
+        return is_succes
 
     def debug_spawn_shelves(self, shelves: string):
         shelves = shelves.split(',')
+        is_succes = True
         for shelf in shelves:
             shelf_attr = shelf.split('_')
-            new_shelf = Shelf(int(shelf_attr[0]), int(shelf_attr[1]))
-            self.shelf_dict[new_shelf.id] = new_shelf
-            self.free_shelves[new_shelf.id] = new_shelf
-        return True
+            is_slot_free = True
+            if not self._does_collide((int(shelf_attr[0]), int(shelf_attr[1]))) and not self._is_on_goal((int(shelf_attr[0]), int(shelf_attr[1]))):
+                new_shelf = Shelf(int(shelf_attr[0]), int(shelf_attr[1]))
+                self.shelf_dict[new_shelf.id] = new_shelf
+                self.free_shelves[new_shelf.id] = new_shelf
+            else:
+                is_succes = False
+
+        return is_succes
 
     def debug_agents_actions(self, actions: string):
         actions = actions.split(',')
@@ -297,27 +306,35 @@ class Warehouse:
             des_action = Action(int(agent_attr[1]))
 
             ## if action is FORWARD then check collisions
+            new_pos = self.simulate_move((agent.y, agent.x), agent.cur_dir, des_action)
             if des_action == Action.FORWARD:
-                new_pos = self.simulate_move((agent.y, agent.x), agent.cur_dir, des_action)
                 does_collide = self._does_collide(new_pos)
                 if does_collide:
-                    agent.score -= 0.5
-
-                    print(f"Agent {agent.id} pos (y:{agent.y},x:{agent.x}) for action {des_action} collides ")
+                    agent.score += Reward.INVALID_MOVE_PENALTY.value
                     # print('Invalid action ',des_action, 'for agent ', agent.id)
-                    pass
+                    #pass
                 else:
-                    min_temp = self.calc_min_dis(agent, new_pos)
-                    if min_temp < agent.min_dis:
-                        agent.score += 1.5
+                    min_dis, turn_cost  = self.calc_costs(agent, new_pos)
+                    min_temp = min_dis + turn_cost
+                    if min_temp  < agent.min_dis:
+                        reward = Reward.DISTANCE_REWARD.value
+                        agent.score += Reward.DISTANCE_REWARD.value
                     else:
-                        agent.score -= 1.5
+                        agent.score += Reward.DISTANCE_PENALTY.value
                     agent.min_dis = min_temp
-                    print(f"Agent {agent.id} pos (y:{agent.y},x:{agent.x}) for action {des_action} min_dis:{agent.min_dis} ")
                     self.agent_dict[agent.id].step(des_action)
             ##no need to check collision when turning
             elif des_action == Action.NONE or des_action == Action.RIGHT or des_action == Action.LEFT:
+                
+                min_dis, turn_cost  = self.calc_costs(agent, new_pos)
+                min_temp = min_dis + turn_cost
+                if min_temp  > agent.min_dis:
+                    agent.score += 2*Reward.DISTANCE_PENALTY.value
+                else:
+                    agent.score += Reward.DISTANCE_REWARD.value
+                agent.min_dis = min_temp
                 self.agent_dict[agent.id].step(des_action)
+
 
             elif des_action == Action.LOAD:
                 is_on_shelf, shelf_id = self._is_agent_on_shelf(agent)
@@ -325,27 +342,36 @@ class Warehouse:
                     shelf = self.shelf_dict[shelf_id]
                     self.free_shelves.pop(shelf.id)
                     agent.load(shelf)
-                    agent.score += 2
-                    agent.min_dis = self.calc_min_dis(agent, (agent.y,agent.x))
+                    agent.score += Reward.LOAD_REWARD.value
+                    min_dis, turn_cost = self.calc_costs(agent, new_pos)
+                    min_temp = min_dis + turn_cost
+                    agent.min_dis = min_temp
                     # print('Agent ', agent.id, 'picked up the shelf ', shelf.id)
                 else:
+                    agent.score += Reward.INVALID_MOVE_PENALTY.value
                     # print('Invalid action ', des_action, 'for agent ', agent.id)
-                    pass
+                    #pass
             elif des_action == Action.UNLOAD:
                 is_on_goal = self._is_agent_on_goal(agent)
                 if is_on_goal and agent.carrying_shelf != None:
                     shelf = agent.carrying_shelf
                     agent.unload()
-                    agent.score += 2
+                    agent.score += Reward.UNLOAD_REWARD.value
                     self.shelf_dict.pop(shelf.id)
-                    agent.min_dis = self.calc_min_dis(agent, (agent.y,agent.x))
+                    print("popppppppp")
+                    min_dis, turn_cost = self.calc_costs(agent, new_pos)
+                    min_temp = min_dis + turn_cost
+                    agent.min_dis = min_temp
                     # print('Agent ', agent.id, 'left the shelf ', shelf.id)
                 else:
+                    agent.score += Reward.INVALID_MOVE_PENALTY.value
                     # print('Invalid action ', des_action, 'for agent ', agent.id)
-                    pass
+                    #pass
+        new_line = '\n'
+        #print(
+           # f"Agent id {agent.id} {new_line}on ({agent.y},{agent.x}) {new_line}with action {des_action} {new_line}min_dist {agent.min_dis}{new_line}reward {agent.score}")
 
     def _init_agents_callback(self, msg):
-
         for i, (a, (x, y)) in enumerate(msg.data):
             cal_y, cal_x = self._con_to_disc(y, x)
             self.agent_dic[i] = Agent(cal_y, cal_x, a)
@@ -410,21 +436,49 @@ class Warehouse:
         if ind not in self.shelf_dic:
             self.shelf_dic[ind] = Shelf(y, x)
 
-    def calc_min_dis(self, agent: Agent , new_pos:tuple):
-        min = 999
+    def calc_costs(self, agent: Agent, new_pos: tuple):
+        dist_cost = 999
+        # (y,x)
+        closest_pos = (0, 0)
+        # calculate manhattan distance
         if not agent.carrying_shelf:
             for shelf in self.free_shelves.values():
                 dis = abs(new_pos[1] - shelf.x) + abs(new_pos[0] - shelf.y)
-                if dis < min:
-                    min = dis
+                if dis < dist_cost:
+                    dist_cost = dis
+                    closest_pos = (shelf.y, shelf.x)
         else:
             for goal in self.goal_dict.values():
                 dis = abs(new_pos[1] - goal.x) + abs(new_pos[0] - goal.y)
-                if dis < min:
-                    min = dis
-        return min
-
-    def step(self):
+                if dis < dist_cost:
+                    dist_cost = dis
+                    closest_pos = (goal.y, goal.x)
+        # calculate turn costs
+        turn_cost = 2
+        if agent.cur_dir == Direction.LEFT:
+            # left
+            if agent.x >= closest_pos[1]:
+                turn_cost -= 1
+                if agent.y == closest_pos[0]:
+                    turn_cost -= 1
+        elif agent.cur_dir == Direction.UP:
+            if agent.y >= closest_pos[0]:
+                turn_cost -= 1
+                if agent.x == closest_pos[1]:
+                    turn_cost -= 1
+        elif agent.cur_dir == Direction.RIGHT:
+            if agent.x <= closest_pos[1]:
+                turn_cost -= 1
+                if agent.y == closest_pos[0]:
+                    turn_cost -= 1
+        else:
+            if agent.y <= closest_pos[0]:
+                turn_cost -= 1
+                if agent.x == closest_pos[1]:
+                    turn_cost -= 1
+        return dist_cost, turn_cost
+    def calculate_strict_rules(self, agent : Agent, desired_act : Action):
+        # check
         pass
 
     # for each simulation step
@@ -451,20 +505,26 @@ class Warehouse:
 
         return False, -1
 
-    def _does_collide(self, first: Tuple):
+    def _does_collide(self, target_pos: Tuple):
         ## check agents
         for agent in self.agent_dict.values():
-            if first[0] == agent.y and first[1] == agent.x:
+            if target_pos[0] == agent.y and target_pos[1] == agent.x:
                 return True
         ## check shelves
         for shelf in self.shelf_dict.values():
-            if first[0] == shelf.y and first[1] == shelf.x:
+            if target_pos[0] == shelf.y and target_pos[1] == shelf.x:
                 return True
         ## check boundaries
-        if first[0] < 0 or first[1] < 0 or first[0] >= self.map_height or first[1] >= self.map_width:
+        if target_pos[0] < 0 or target_pos[1] < 0 or target_pos[0] >= self.map_height or target_pos[
+            1] >= self.map_width:
             return True
         return False
+    def _is_on_goal(self, target_pos: Tuple):
+        for goal in self.goal_dict.values():
+            if target_pos[0] == goal.y and target_pos[1] == goal.x:
+                return True
 
+        return False
     # method to be used for converting self.map_image into array
     def _convert_image_into_array(self):
         pass

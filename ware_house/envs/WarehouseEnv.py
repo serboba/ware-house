@@ -12,22 +12,25 @@ MAP_STRING = "0,A_2,0,0,0,0,0,0/0,A_3,0,0,0,A_2,0,0/0,0,S,0,0,0,0,0/0,0,0,0,0,0,
 
 class WarehouseEnv(gym.Env):
     metadata = {"render_modes": ["human", "rgb_array"], "render_fps": 4}
-
+    
     def __init__(self, width, height, n_agents, n_shelves):
         self.size = width  # The size of the square grid
         self.window_size = 512
         self.render_mode = "human"
         self.window = None
         self.clock = None
-
+        self.step_counter = 0
         self.width = width
         self.height = height
         self.n_agents = n_agents
-        self.n_shelves = n_shelves
+        self.cur_shelves_n = n_shelves
+        self.N_SHELVES  = n_shelves
         self.warehouse = Warehouse(height, width)
         #self.n_shelves = len(self.warehouse.shelf_dict)
         self.make_spaces()
         self.reward = 0
+
+
 
     def make_spaces(self):
         location_space = spaces.MultiDiscrete([self.height, self.width])
@@ -43,7 +46,7 @@ class WarehouseEnv(gym.Env):
         })
         shelf_list_space = spaces.Dict({
             i: location_space
-            for i in range(self.n_shelves)
+            for i in range(self.N_SHELVES)
         })
         goal_list_space = spaces.Dict({
             i: location_space
@@ -55,7 +58,7 @@ class WarehouseEnv(gym.Env):
             l1.append(np.array([location_space,direction_space]))
         
         l2= []
-        for j in range(self.n_shelves):
+        for j in range(self.cur_shelves_n):
             l2.append(location_space)
         l3 = []
         for i in range(N_GOALS):
@@ -68,13 +71,27 @@ class WarehouseEnv(gym.Env):
         test2 = np.array([[0,0],[10,10]])
         shelftest = np.tile(test2,len(l2))
 
+        print("shelftest : ", shelftest)
+        print("nshelfs : ", self.N_SHELVES)
+        print(shelftest.shape)
+        print(shelftest[0].shape)
         goaltest = np.tile(test2,len(l3))
-#        test = self._get_obs()
+
+#       test = self._get_obs()
         self.observation_space = spaces.Dict({
             "agent": gym.spaces.Box(low=self.height,high=self.width,shape=(test1[0].shape[0],)),
             "shelf": gym.spaces.Box(low=self.height,high=self.width,shape=(shelftest[0].shape[0],)),
-            "goal": gym.spaces.Box(low=self.height,high=self.width,shape=(goaltest[0].shape[0],))
+            "goal": gym.spaces.Box(low=self.height,high=self.width,shape=(goaltest[0].shape[0],)),
+            "mindist" : gym.spaces.Box(low=0, high=999, shape=(self.n_agents,)),
         })
+
+        '''
+        self.observation_space = spaces.Dict({
+            "agent": gym.spaces.Box(low=self.height,high=self.width,shape=(test1[0].shape[0],)),
+            "shelf": gym.spaces.Box(low=self.height,high=self.width,shape=(shelftest[0].shape[0],)),
+            "goal": gym.spaces.Box(low=self.height,high=self.width,shape=(goaltest[0].shape[0],)),
+        })
+        '''
 
         self.action_space = spaces.MultiDiscrete([len(Action) for i in range(self.n_agents)])
 
@@ -82,17 +99,21 @@ class WarehouseEnv(gym.Env):
         t1 = []
         t2 = []
         t3 = []
+        t4 = []
         for agent in self.warehouse.agent_dict.values():
             t1.append(agent.y)
             t1.append(agent.x)
             t1.append(agent.cur_dir.value)
+            t4.append(agent.min_dis)
         for shelf in self.warehouse.shelf_dict.values():
             t2.append(shelf.y)
             t2.append(shelf.x)
-            dif = self.n_shelves - len(self.warehouse.shelf_dict)
-            if dif != 0:
-                t2.append(self.warehouse.goal_dict[0].y)
-                t2.append(self.warehouse.goal_dict[0].x)
+        dif = self.N_SHELVES - len(self.warehouse.shelf_dict)
+        if dif != 0:
+            print("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!", dif)
+            #print(self.warehouse.goal_dict[1])
+            #t2.append(self.warehouse.goal_dict[1].y)
+            #t2.append(self.warehouse.goal_dict[1].x)
 
         for goal in self.warehouse.goal_dict.values():
             t3.append (goal.y)
@@ -120,12 +141,14 @@ class WarehouseEnv(gym.Env):
         t1 = np.array(t1)
         t2 = np.array(t2)
         t3 = np.array(t3)
-       
+        t4 = np.array(t4)
 
+        #print("----t2: ", t2)
         mydict = {
             "agent": t1,
             "shelf" : t2,
-            "goal" : t3
+            "goal" : t3,
+            "mindist" : t4
         }
 
         return mydict
@@ -154,19 +177,22 @@ class WarehouseEnv(gym.Env):
 
     def step(self, action):
         done = False
+        self.step_counter += 1
         self.reward = 0
         for i, agent_action in enumerate(action):
             self.warehouse.debug_agents_actions(f'{i + 1}_{agent_action}')
             self.reward += self.warehouse.agent_dict[i + 1].score
         if len(self.warehouse.shelf_dict.keys()) == 0:
-            print("------DONE YESSSSSSSSS!!!!!!!!!")
             done = True
+            print(f"Episode ends with {self.step_counter} steps and with reward {self.reward}")
+            with open('reward_res.txt', 'a') as f:
+                f.write(f"{self.reward}\n")
         else:
-            self.n_shelves = len(self.warehouse.shelf_dict.keys())
+            self.cur_shelves_n = len(self.warehouse.shelf_dict.values())
         observation = self._get_obs()
         #info = self._get_info()
-        if self.render_mode == "human":
-            self._render_frame()
+        #if self.render_mode == "human":
+        #    self._render_frame()
         return observation, self.reward, done, {}
 
     def render(self, **kwargs):
@@ -302,6 +328,18 @@ class WarehouseEnv(gym.Env):
     def reset(self):
         self.warehouse.reset()
 
+        self.step_counter = 0
+        # spawn goals
+        counter = N_GOALS
+        while counter > 0:
+            pos_y = random.randint(0, self.height - 1)
+            pos_x = random.randint(0, self.width - 1)
+            # goal spawn format "{pos_y}_{pos_x}"
+            while not self.warehouse.debug_spawn_goals(f'{pos_y}_{pos_x}'):
+                pos_y = random.randint(0, self.height - 1)
+                pos_x = random.randint(0, self.width - 1)
+            counter -= 1
+
         # spawn random agents
         counter = self.n_agents
         while counter > 0:
@@ -315,19 +353,10 @@ class WarehouseEnv(gym.Env):
                 dir = random.randint(0, len(Direction) - 1)
             counter -= 1
 
-        # spawn goals
-        counter = N_GOALS
-        while counter > 0:
-            pos_y = random.randint(0, self.height - 1)
-            pos_x = random.randint(0, self.width - 1)
-            # goal spawn format "{pos_y}_{pos_x}"
-            while not self.warehouse.debug_spawn_goals(f'{pos_y}_{pos_x}'):
-                pos_y = random.randint(0, self.height - 1)
-                pos_x = random.randint(0, self.width - 1)
-            counter -= 1
 
         # spawn shelves
-        counter = self.n_shelves
+        counter = self.N_SHELVES
+        self.cur_shelves_n = self.N_SHELVES
         while counter > 0:
             pos_y = random.randint(0, self.height - 1)
             pos_x = random.randint(0, self.width - 1)
@@ -336,7 +365,9 @@ class WarehouseEnv(gym.Env):
                 pos_y = random.randint(0, self.height - 1)
                 pos_x = random.randint(0, self.width - 1)
             counter -= 1
-
+        #print("before!!!!!")
         observation = self._get_obs()
+        #print("after!!!!!")
         #info = self._get_info()
+
         return observation, {}
