@@ -22,6 +22,7 @@ for _variation, _size, _agent_number, _shelf_number in _settings:
     register(
         id=f"rware-v{_variations[_variation]}",
         entry_point='ware_house.envs:WarehouseEnv',
+        max_episode_steps=500,
         kwargs={
             "width": _sizes[_size][0],
             "height": _sizes[_size][1],

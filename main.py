@@ -34,8 +34,9 @@ def train(environment):
 
     
     rewards = []
-    model = A2C("MultiInputPolicy", environment, verbose=1,tensorboard_log="./a2c_warehouse_agent2/")
-    model.learn(total_timesteps=1000000)
+    model = A2C("MultiInputPolicy", environment, verbose=1,tensorboard_log="./a2c_warehouse_agent2/", n_steps=100)
+    model.learn(total_timesteps=5000000)
+    
     model.save('a2c-rware-2')
 
     print(rewards)

@@ -30,6 +30,8 @@ class WarehouseEnv(gym.Env):
         self.make_spaces()
         self.reward = 0
 
+        self.shelf_previous = {}
+
 
 
     def make_spaces(self):
@@ -71,10 +73,10 @@ class WarehouseEnv(gym.Env):
         test2 = np.array([[0,0],[10,10]])
         shelftest = np.tile(test2,len(l2))
 
-        print("shelftest : ", shelftest)
-        print("nshelfs : ", self.N_SHELVES)
-        print(shelftest.shape)
-        print(shelftest[0].shape)
+        #print("shelftest : ", shelftest)
+        #print("nshelfs : ", self.N_SHELVES)
+        #print(shelftest.shape)
+        #print(shelftest[0].shape)
         goaltest = np.tile(test2,len(l3))
 
 #       test = self._get_obs()
@@ -105,16 +107,19 @@ class WarehouseEnv(gym.Env):
             t1.append(agent.x)
             t1.append(agent.cur_dir.value)
             t4.append(agent.min_dis)
+        
+        dif = self.N_SHELVES - len(self.warehouse.shelf_dict)
+        if dif != 0:
+            #print("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!", dif)
+            #print(amk)
+            #print(self.warehouse.goal_dict[1])
+            t2.append(self.warehouse.goal_dict[1].y)
+            t2.append(self.warehouse.goal_dict[1].x)
+
         for shelf in self.warehouse.shelf_dict.values():
             t2.append(shelf.y)
             t2.append(shelf.x)
-        dif = self.N_SHELVES - len(self.warehouse.shelf_dict)
-        if dif != 0:
-            print("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!", dif)
-            #print(self.warehouse.goal_dict[1])
-            #t2.append(self.warehouse.goal_dict[1].y)
-            #t2.append(self.warehouse.goal_dict[1].x)
-
+        
         for goal in self.warehouse.goal_dict.values():
             t3.append (goal.y)
             t3.append (goal.x)
@@ -327,7 +332,7 @@ class WarehouseEnv(gym.Env):
 
     def reset(self):
         self.warehouse.reset()
-
+        #print("ooooooooooooooooooooooooooo")
         self.step_counter = 0
         # spawn goals
         counter = N_GOALS
