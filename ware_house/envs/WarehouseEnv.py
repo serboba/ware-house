@@ -13,7 +13,7 @@ MAP_STRING = "0,A_2,0,0,0,0,0,0/0,A_3,0,0,0,A_2,0,0/0,0,S,0,0,0,0,0/0,0,0,0,0,0,
 class WarehouseEnv(gym.Env):
     metadata = {"render_modes": ["human", "rgb_array"], "render_fps": 4}
     
-    def __init__(self, width, height, n_agents, n_shelves):
+    def __init__(self, width, height, n_agents, n_shelves, max_step = 1000):
         self.size = width  # The size of the square grid
         self.window_size = 512
         self.render_mode = "human"
@@ -29,6 +29,7 @@ class WarehouseEnv(gym.Env):
         #self.n_shelves = len(self.warehouse.shelf_dict)
         self.make_spaces()
         self.reward = 0
+        self.MAX_STEPS = max_step
 
 
 
@@ -182,11 +183,11 @@ class WarehouseEnv(gym.Env):
         for i, agent_action in enumerate(action):
             self.warehouse.debug_agents_actions(f'{i + 1}_{agent_action}')
             self.reward += self.warehouse.agent_dict[i + 1].score
-        if len(self.warehouse.shelf_dict.keys()) == 0:
+        if len(self.warehouse.shelf_dict.keys()) == 0 or self.step_counter >= self.MAX_STEPS:
             done = True
             print(f"Episode ends with {self.step_counter} steps and with reward {self.reward}")
-            with open('reward_res.txt', 'a') as f:
-                f.write(f"{self.reward}\n")
+            with open('warehouse.txt', 'a+') as f:
+                f.write(f"(Reward : {self.reward}, Step : {self.step_counter}),")
         else:
             self.cur_shelves_n = len(self.warehouse.shelf_dict.values())
         observation = self._get_obs()
