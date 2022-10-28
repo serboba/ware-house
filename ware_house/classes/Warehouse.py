@@ -358,7 +358,7 @@ class Warehouse:
                     agent.unload()
                     agent.score += Reward.UNLOAD_REWARD.value
                     self.shelf_dict.pop(shelf.id)
-                    print("popppppppp")
+                    # print("popppppppp")
                     min_dis, turn_cost = self.calc_costs(agent, new_pos)
                     min_temp = min_dis + turn_cost
                     agent.min_dis = min_temp
