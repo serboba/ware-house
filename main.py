@@ -6,11 +6,13 @@ import csv
 
 import gym
 import os
+
+import numpy as np
 from gym.wrappers import FlattenObservation
 from stable_baselines3 import PPO, A2C
 from stable_baselines3.common.vec_env import DummyVecEnv
 from stable_baselines3.common.evaluation import evaluate_policy
-
+import matplotlib.pyplot as plt
 
 import ware_house.envs
 
@@ -21,7 +23,7 @@ def test_gym(environment):
         state, info = environment.reset()
         done = False
         score = 0
-       # print(info)
+        # print(info)
         while not done:
             action = environment.action_space.sample()
             n_state, reward, done, info = environment.step(action)
@@ -35,6 +37,10 @@ def train(environment, learning_rate, time_step):
     model = A2C("MultiInputPolicy", environment, learning_rate=learning_rate, verbose=1)
     model.learn(total_timesteps=time_step)
     # evaluate_policy(model, environment, n_eval_episodes=10, render=True)
+
+env_versions = ["1", "2", "3", "4"]
+learning_rates = [0.05, 0.1, 0.5, 0.7]
+time_steps = [50, 100, 1000, 5000]
 def train_all():
     for env_version in env_versions:
         for learning_rate in learning_rates:
@@ -46,16 +52,49 @@ def train_all():
                     f.close()
                 env = gym.make(f"rware-v{env_version}")
                 train(env, learning_rate=learning_rate, time_step=time_step)
-def plot_data():
-    pass
-env_versions = ["1", "2", "3", "4"]
-learning_rates = [0.05, 0.1, 0.5, 0.7]
-time_steps = [50, 100, 1000, 5000]
+                plot_data("cur_reward.txt", "number", "rewards", env_version, learning_rate, time_step)
+
+
+def plot_data(file_path, x_axis_label, y_axis_label, version_num, learning_rate, time_step):
+    ## open cur_rewards.txt file read rewards
+    rewards = []
+    if os.path.exists(file_path):
+        with open(file_path, "r") as f:
+            rewards = f.readlines();
+            print(rewards)
+            ## count reward numbers
+            episodes_num = np.arange(0., len(rewards), 1)
+            ## plot
+            plt.plot(episodes_num, rewards, "r^")
+            plt.title(f"Agent number: {version_num} lr: {learning_rate} ts: {time_step}")
+            plt.ylabel(y_axis_label)
+            plt.xlabel(x_axis_label)
+            plt.show()
+            plt.savefig(f"{version_num}_{learning_rate}_{time_step}.png")
+            ## save graph
+            delete_file(file_path)
+    else:
+        print("The file does not exist")
+
+
+
+
+
+
+
+
+
+def delete_file(file_path):
+    if os.path.exists(file_path):
+        os.remove(file_path)
+    else:
+        print("The file does not exist")
+
+
+
 
 if __name__ == '__main__':
-
+    delete_file("warehouse.txt")
     train_all()
-    plot_data()
-
 
 # See PyCharm help at https://www.jetbrains.com/help/pycharm/
