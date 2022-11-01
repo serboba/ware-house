@@ -39,8 +39,8 @@ def train(environment, learning_rate, time_step):
     # evaluate_policy(model, environment, n_eval_episodes=10, render=True)
 
 env_versions = ["1", "2", "3", "4"]
-learning_rates = [0.05, 0.1, 0.5, 0.7]
-time_steps = [50, 100, 1000, 5000]
+learning_rates = [0.7]
+time_steps = [5000, 50000, 500000, 5000000]
 def train_all():
     for env_version in env_versions:
         for learning_rate in learning_rates:
