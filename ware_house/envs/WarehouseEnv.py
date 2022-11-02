@@ -6,7 +6,7 @@ from gym import spaces
 import pygame
 
 from ware_house.classes.Warehouse import Warehouse, Action, Direction, N_GOALS
-
+from utils import SUMMARY_FILE_PATH, REWARDS_FILE_PATH, STEPS_FILE_PATH
 MAP_STRING = "0,A_2,0,0,0,0,0,0/0,A_3,0,0,0,A_2,0,0/0,0,S,0,0,0,0,0/0,0,0,0,0,0,0,0/0,G,0,0,0,0,0,0"
 
 
@@ -188,16 +188,18 @@ class WarehouseEnv(gym.Env):
         if len(self.warehouse.shelf_dict.keys()) == 0:
             done = True
             print(f"Episode ends with {self.step_counter} steps and with reward {self.reward}")
-            with open('warehouse.txt', 'a+') as f:
+            with open(SUMMARY_FILE_PATH, 'a+') as f:
                 f.write(f"(Reward : {self.reward}, Step : {self.step_counter}),")
-            with open("cur_rewards.txt", "a+") as f:
-                f.write(str(self.reward))
+            with open(REWARDS_FILE_PATH, "a+") as f:
+                f.write(f"{self.reward}\n")
+            with open(STEPS_FILE_PATH, "a+") as f:
+                f.write(f"{self.step_counter}\n")
         else:
             self.cur_shelves_n = len(self.warehouse.shelf_dict.values())
         observation = self._get_obs()
         # info = self._get_info()
-        # if self.render_mode == "human":
-        #    self._render_frame()
+        #if self.render_mode == "human":
+         #   self._render_frame()
         return observation, self.reward, done, {}
 
     def render(self, **kwargs):
