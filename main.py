@@ -59,6 +59,7 @@ def train_all():
 def plot_data(first_file_path, second_file_path, x_axis_label, version_num, learning_rate, time_step):
     ## open cur_rewards.txt file read rewards
     rewards = []
+    plt.clf()
     if os.path.exists(first_file_path):
         with open(first_file_path, "r") as f:
             rewards_str = f.read().split("\n")
