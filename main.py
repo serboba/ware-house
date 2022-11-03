@@ -3,6 +3,7 @@
 # Press ⌃R to execute it or replace it with your code.
 # Press Double ⇧ to search everywhere for classes, files, tool windows, actions, and settings.
 import csv
+import datetime
 
 import gym
 import os
@@ -13,7 +14,7 @@ from stable_baselines3 import PPO, A2C
 from stable_baselines3.common.vec_env import DummyVecEnv
 from stable_baselines3.common.evaluation import evaluate_policy
 import matplotlib.pyplot as plt
-from utils import SUMMARY_FILE_PATH, REWARDS_FILE_PATH, STEPS_FILE_PATH
+from utils import SUMMARY_FILE_PATH, REWARDS_FILE_PATH, STEPS_FILE_PATH, PLOT_SAVE_PATH
 import ware_house.envs
 
 
@@ -89,7 +90,7 @@ def plot_data(first_file_path, second_file_path, x_axis_label, version_num, lear
             plt.plot(episodes_num, rewards, '-', color='blue', label='steps')
             plt.title(f"Agent number: {version_num} lr: {learning_rate} ts: {time_step}")
             plt.legend()
-            plt.savefig(f"{x_axis_label}_{version_num}_{learning_rate}_{time_step}.png")
+            plt.savefig(f"{PLOT_SAVE_PATH}/{x_axis_label}_{version_num}_{learning_rate}_{time_step}.png")
             ## save graph
             delete_file(second_file_path)
     else:
@@ -109,6 +110,8 @@ if __name__ == '__main__':
     delete_file(SUMMARY_FILE_PATH)
     delete_file(REWARDS_FILE_PATH)
     delete_file(STEPS_FILE_PATH)
+    PLOT_SAVE_PATH = f"{PLOT_SAVE_PATH}_{datetime.datetime.now()}"
+    os.mkdir(PLOT_SAVE_PATH)
     train_all()
 
 # See PyCharm help at https://www.jetbrains.com/help/pycharm/
