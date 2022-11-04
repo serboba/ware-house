@@ -76,10 +76,11 @@ class WarehouseEnv(gym.Env):
         #print("shelftest : ", shelftest)
         #print("nshelfs : ", self.N_SHELVES)
         #print(shelftest.shape)
-        #print(shelftest[0].shape)
+        print("shape? ",shelftest[0].shape)
         goaltest = np.tile(test2,len(l3))
 
 #       test = self._get_obs()
+        print("shelffff")
         self.observation_space = spaces.Dict({
             "agent": gym.spaces.Box(low=self.height,high=self.width,shape=(test1[0].shape[0],)),
             "shelf": gym.spaces.Box(low=self.height,high=self.width,shape=(shelftest[0].shape[0],)),
@@ -108,17 +109,19 @@ class WarehouseEnv(gym.Env):
             t1.append(agent.cur_dir.value)
             t4.append(agent.min_dis)
         
-        dif = self.N_SHELVES - len(self.warehouse.shelf_dict)
-        if dif != 0:
-            #print("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!", dif)
-            #print(amk)
-            #print(self.warehouse.goal_dict[1])
-            t2.append(self.warehouse.goal_dict[1].y)
-            t2.append(self.warehouse.goal_dict[1].x)
-
-        for shelf in self.warehouse.shelf_dict.values():
-            t2.append(shelf.y)
-            t2.append(shelf.x)
+        #dif = self.N_SHELVES - len(self.warehouse.shelf_dict)
+        
+        dkeys = list(self.warehouse.shelf_dict.keys()) 
+        mainrange = np.arange(1,self.N_SHELVES+1)
+        intersect = np.intersect1d(dkeys,mainrange)
+        
+        for i in range (1,mainrange.shape[0]+1):
+            if i in intersect:
+                t2.append(self.warehouse.shelf_dict[i].y)
+                t2.append(self.warehouse.shelf_dict[i].x)
+            else:
+                t2.append(self.warehouse.goal_dict[1].y)
+                t2.append(self.warehouse.goal_dict[1].x)
         
         for goal in self.warehouse.goal_dict.values():
             t3.append (goal.y)
@@ -200,7 +203,7 @@ class WarehouseEnv(gym.Env):
         #    self._render_frame()
         return observation, self.reward, done, {}
 
-    def render(self, **kwargs):
+    def render(self, mode, **kwargs):
         if self.render_mode == "rgb_array":
             return self._render_frame()
 
