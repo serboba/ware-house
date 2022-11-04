@@ -6,7 +6,7 @@ from gym import spaces
 import pygame
 
 from ware_house.classes.Warehouse import Warehouse, Action, Direction, N_GOALS
-
+from utils import SUMMARY_FILE_PATH, REWARDS_FILE_PATH, STEPS_FILE_PATH
 MAP_STRING = "0,A_2,0,0,0,0,0,0/0,A_3,0,0,0,A_2,0,0/0,0,S,0,0,0,0,0/0,0,0,0,0,0,0,0/0,G,0,0,0,0,0,0"
 
 
@@ -110,11 +110,11 @@ class WarehouseEnv(gym.Env):
             t4.append(agent.min_dis)
         
         #dif = self.N_SHELVES - len(self.warehouse.shelf_dict)
-        
-        dkeys = list(self.warehouse.shelf_dict.keys()) 
+
+        dkeys = list(self.warehouse.shelf_dict.keys())
         mainrange = np.arange(1,self.N_SHELVES+1)
         intersect = np.intersect1d(dkeys,mainrange)
-        
+
         for i in range (1,mainrange.shape[0]+1):
             if i in intersect:
                 t2.append(self.warehouse.shelf_dict[i].y)
@@ -193,8 +193,12 @@ class WarehouseEnv(gym.Env):
         if len(self.warehouse.shelf_dict.keys()) == 0:
             done = True
             print(f"Episode ends with {self.step_counter} steps and with reward {self.reward}")
-            with open('reward_res.txt', 'a') as f:
+            with open(SUMMARY_FILE_PATH, 'a+') as f:
+                f.write(f"(Reward : {self.reward}, Step : {self.step_counter}),")
+            with open(REWARDS_FILE_PATH, "a+") as f:
                 f.write(f"{self.reward}\n")
+            with open(STEPS_FILE_PATH, "a+") as f:
+                f.write(f"{self.step_counter}\n")
         else:
             self.cur_shelves_n = len(self.warehouse.shelf_dict.values())
         observation = self._get_obs()
@@ -373,9 +377,9 @@ class WarehouseEnv(gym.Env):
                 pos_y = random.randint(0, self.height - 1)
                 pos_x = random.randint(0, self.width - 1)
             counter -= 1
-        #print("before!!!!!")
+        # print("before!!!!!")
         observation = self._get_obs()
-        #print("after!!!!!")
-        #info = self._get_info()
+        # print("after!!!!!")
+        # info = self._get_info()
 
         return observation, {}
