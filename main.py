@@ -37,8 +37,7 @@ def test_gym(environment):
 def train(environment, learning_rate, time_step):
     model = A2C("MultiInputPolicy", environment, verbose=1, n_steps=100)
     model.learn(total_timesteps=time_step)
-
-    # evaluate_policy(model, environment, n_eval_episodes=10, render=True)
+    evaluate_policy(model, environment, n_eval_episodes=10, render=True)
 
 env_versions = ["1", "2", "3", "4"]
 learning_rates = [0.7]
@@ -103,7 +102,6 @@ def delete_file(file_path):
     else:
         print("The file does not exist")
 
-    evaluate_policy(model, environment, n_eval_episodes=10, render=True)
 
 
 
