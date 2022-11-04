@@ -35,13 +35,13 @@ def test_gym(environment):
 
 
 def train(environment, learning_rate, time_step):
-    model = A2C("MultiInputPolicy", environment, verbose=1, n_steps=100)
+    model = A2C("MultiInputPolicy", environment, verbose=1, n_steps=500)
     model.learn(total_timesteps=time_step)
     evaluate_policy(model, environment, n_eval_episodes=10, render=True)
 
 env_versions = ["1", "2", "3", "4"]
 learning_rates = [0.7]
-time_steps = [5000, 50000, 500000, 5000000]
+time_steps = [5000, 50000, 500000, 5000000,1000000]
 def train_all():
     for env_version in env_versions:
         for learning_rate in learning_rates:
