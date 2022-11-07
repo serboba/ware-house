@@ -69,7 +69,7 @@ def plot_data(first_file_path, second_file_path, x_axis_label, version_num, lear
             ## count reward numbers
             episodes_num = np.arange(0, len(rewards), 1)
             ## plot
-            plt.plot(episodes_num, rewards, '-', color='orange', label='rewards')
+            plt.plot(episodes_num, rewards, '-', color='red', label='rewards')
             plt.title(f"Agent number: {version_num} lr: {learning_rate} ts: {time_step}")
             plt.xlabel(x_axis_label)
             ## save graph
